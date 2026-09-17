@@ -1,0 +1,25 @@
+{
+  "version": "v3",
+  "database": "Cloud Firestore",
+  "tables": {
+    "plans": {
+      "fields": {
+        "owner": "string (데이터 소유자 UID)",
+        "title": "string (계획 이름)",
+        "period": "string (기간)",
+        "expectedHours": "number (예상 시간 - 시간단위)",
+        "expectedMinutes": "number (예상 시간 - 분단위)",
+        "history": "string (과거 수정 이력 JSON)"
+      }
+    },
+    "tasks": {
+      "fields": {
+        "owner": "string (데이터 소유자 UID)",
+        "planId": "string (연결된 계획 ID)",
+        "taskName": "string (할 일 내용)",
+        "actualHours": "number (실제 걸린 시간 - 시간단위)",
+        "actualMinutes": "number (실제 걸린 시간 - 분단위)"
+      }
+    }
+  }
+}
