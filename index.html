@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>플랜두씨 다이어리</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f8f9fa; padding: 20px; color: #333; }
+        .notice { background: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-weight: bold; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { margin-top: 0; color: #007bff; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .sort-info { font-size: 13px; color: #6c757d; font-weight: normal; margin-left: 10px; }
+        input, select, button { padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
+        .time-inputs { display: flex; gap: 10px; }
+        .time-inputs input { flex: 1; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; padding: 10px; }
+        button:hover { background: #0056b3; }
+        .btn-sm { padding: 4px 8px; font-size: 12px; margin-right: 5px; display: inline-block; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-warning:hover { background: #e0a800; }
+        .list-item { background: #f1f3f5; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center; }
+        .stat-box { background: #e9ecef; padding: 15px; border-radius: 8px; font-size: 18px; font-weight: bold; }
+        .history-text { font-size: 12px; color: #6c757d; margin-top: 5px; }
+        .badge { background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-bottom: 5px; display: inline-block; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div id="authSection" style="max-width: 400px; margin: 50px auto;">
+        <div class="card">
+            <h2 style="text-align: center;">플랜두씨 다이어리</h2>
+            <p style="text-align: center; font-size: 14px; color: #666;">내 기록은 나만 볼 수 있습니다.</p>
+            <div class="input-group">
+                <input type="email" id="email" placeholder="이메일 (아이디)">
+                <input type="password" id="password" placeholder="비밀번호 (6자리 이상)">
+                <button onclick="handleAuth('LOGIN')">로그인</button>
+                <button onclick="handleAuth('SIGNUP')" style="background: #28a745;">새 계정 만들기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="appSection" style="display: none;">
+        <div class="header-bar">
+            <strong>환영합니다! 다이어리에 접속되었습니다.</strong>
+            <button onclick="logout()" class="btn-sm btn-danger">로그아웃</button>
+        </div>
+
+        <div class="card" id="seeSection">
+            <h2>📊 돌아보기 (See)</h2>
+            <div class="stats">
+                <div class="stat-box">총 계획 수<br><span id="statPlans">0</span>건</div>
+                <div class="stat-box">완료된 할 일<br><span id="statCompleted">0</span>건</div>
+                <div class="stat-box">막힘/지연 수<br><span id="statBlocked">0</span>건</div>
+                <div class="stat-box">예상 vs 실제<br><span id="statHours" style="font-size:15px;">0 / 0</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📝 내 계획 (Plan) 관리 <span class="sort-info">※ 기간(날짜)이 빠른 순으로 정렬</span></h2>
+            <div class="input-group">
+                <input type="text" id="planTitle" placeholder="새로운 계획 이름 (예: 자격증 공부)">
+                <input type="text" id="planPeriod" placeholder="진행 기간 (예: 2026-09-20)">
+                <div class="time-inputs">
+                    <input type="number" id="planExpectedHours" placeholder="예상 시간 (시간)">
+                    <input type="number" id="planExpectedMinutes" placeholder="예상 시간 (분)">
+                </div>
+                <button onclick="addPlan()">+ 새 계획 만들기</button>
+            </div>
+            <div id="planList" style="margin-top: 20px; border-top: 2px dashed #eee; padding-top: 15px;">로딩 중...</div>
+        </div>
+
+        <div class="card">
+            <h2>🏃 실제로 한 일 (Do) <span class="sort-info">※ 실제 걸린 시간이 짧은 순으로 정렬</span></h2>
+            <div class="input-group">
+                <select id="taskPlanSelect">
+                    <option value="">(연결할 계획을 선택하세요)</option>
+                </select>
+                <input type="text" id="taskName" placeholder="할 일 내용 입력">
+                <div class="time-inputs">
+                    <input type="number" id="actualHours" placeholder="실제 소요 (시간)">
+                    <input type="number" id="actualMinutes" placeholder="실제 소요 (분)">
+                </div>
+                <input type="text" id="blockedReason" placeholder="막힌 이유 (없으면 비워두기)">
+                <button onclick="addTask()">+ 할 일 추가 기록</button>
+            </div>
+            <div id="taskList" style="margin-top: 20px; border-top: 2px dashed #eee; padding-top: 15px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let plans = [];
+        let tasks = [];
+        let userToken = localStorage.getItem('pds_token'); 
+        let userUid = localStorage.getItem('pds_uid');
+
+        function createElementWithText(tag, text) { const el = document.createElement(tag); el.textContent = text; return el; }
+
+        async function handleAuth(action) {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if (!email || password.length < 6) return alert('이메일과 6자리 이상의 비밀번호를 입력하세요.');
+            try {
+                const res = await fetch('/api/auth', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, email, password })
+                });
+                const data = await res.json();
+                if (data.error) return alert('로그인 실패: 아이디 또는 비밀번호를 확인하세요.');
+                
+                localStorage.setItem('pds_token', data.idToken);
+                localStorage.setItem('pds_uid', data.localId);
+                userToken = data.idToken; userUid = data.localId;
+                checkAuth();
+            } catch (err) { alert('통신 오류가 발생했습니다.'); }
+        }
+
+        function logout() {
+            localStorage.removeItem('pds_token'); localStorage.removeItem('pds_uid');
+            userToken = null; userUid = null;
+            checkAuth();
+        }
+
+        function checkAuth() {
+            if (userToken) {
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('appSection').style.display = 'block';
+                init(); 
+            } else {
+                document.getElementById('authSection').style.display = 'block';
+                document.getElementById('appSection').style.display = 'none';
+            }
+        }
+
+        async function apiCall(action, collection, data = null, id = null) {
+            const res = await fetch('/api/db', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                body: JSON.stringify({ action, collection, data, id, uid: userUid })
+            });
+            if (res.status === 403 || res.status === 401) {
+                alert("권한이 없습니다. 남의 데이터이거나 로그인이 만료되었습니다.");
+                logout(); throw new Error("Auth Failed");
+            }
+            return await res.json();
+        }
+
+        async function init() { plans = await apiCall('GET_ALL', 'plans'); tasks = await apiCall('GET_ALL', 'tasks'); render(); }
+
+        async function addPlan() {
+            const title = document.getElementById('planTitle').value;
+            if (!title) return alert('계획 이름을 입력하세요.');
+            const newPlan = {
+                title: title, period: document.getElementById('planPeriod').value || '-',
+                expectedHours: Number(document.getElementById('planExpectedHours').value) || 0,
+                expectedMinutes: Number(document.getElementById('planExpectedMinutes').value) || 0,
+                successCriteria: "", history: "[]", owner: userUid
+            };
+            await apiCall('ADD', 'plans', newPlan);
+            document.getElementById('planTitle').value = ''; document.getElementById('planPeriod').value = '';
+            document.getElementById('planExpectedHours').value = ''; document.getElementById('planExpectedMinutes').value = '';
+            plans = await apiCall('GET_ALL', 'plans'); render();
+        }
+
+        async function editPlan(id) {
+            const plan = plans.find(p => p.id === id); if(!plan) return;
+            const newTitle = prompt('새로운 계획 이름을 입력하세요:', plan.title); if (!newTitle) return; 
+            const newPeriod = prompt('새로운 기간을 입력하세요:', plan.period);
+            const newExpectedH = prompt('새로운 예상 시간(시간):', plan.expectedHours || 0);
+            const newExpectedM = prompt('새로운 예상 시간(분):', plan.expectedMinutes || 0);
+
+            const historyData = plan.history ? JSON.parse(plan.history) : [];
+            historyData.push({ oldTitle: plan.title, oldPeriod: plan.period, oldExpectedH: plan.expectedHours, oldExpectedM: plan.expectedMinutes, changedAt: new Date().toISOString() });
+
+            const updatedData = { title: newTitle, period: newPeriod || plan.period, expectedHours: Number(newExpectedH) || 0, expectedMinutes: Number(newExpectedM) || 0, history: JSON.stringify(historyData), owner: userUid };
+            await apiCall('UPDATE', 'plans', updatedData, id);
+            plans = await apiCall('GET_ALL', 'plans'); render();
+        }
+
+        async function deletePlan(id) {
+            if(!confirm('삭제하시겠습니까?')) return;
+            await apiCall('DELETE', 'plans', null, id);
+            plans = await apiCall('GET_ALL', 'plans'); render();
+        }
+
+        async function addTask() {
+            const planId = document.getElementById('taskPlanSelect').value;
+            const name = document.getElementById('taskName').value;
+            if (!planId) return alert('계획을 선택하세요.'); if (!name) return alert('할 일 내용을 입력하세요.');
+
+            const newTask = { planId: planId, taskName: name, actualHours: Number(document.getElementById('actualHours').value) || 0, actualMinutes: Number(document.getElementById('actualMinutes').value) || 0, blockedReason: document.getElementById('blockedReason').value, isCompleted: true, owner: userUid };
+            await apiCall('ADD', 'tasks', newTask);
+            document.getElementById('taskName').value = ''; document.getElementById('actualHours').value = ''; document.getElementById('actualMinutes').value = ''; document.getElementById('blockedReason').value = '';
+            tasks = await apiCall('GET_ALL', 'tasks'); render();
+        }
+
+        async function editTask(id) {
+            const task = tasks.find(t => t.id === id); if(!task) return;
+            const newName = prompt('할 일 내용을 수정하세요:', task.taskName); if (!newName) return; 
+            const newHours = prompt('실제 걸린 시간(시간):', task.actualHours || 0);
+            const newMins = prompt('실제 걸린 시간(분):', task.actualMinutes || 0);
+            const newBlocked = prompt('막힌 이유:', task.blockedReason || '');
+
+            const updatedData = { taskName: newName, actualHours: Number(newHours) || 0, actualMinutes: Number(newMins) || 0, blockedReason: newBlocked, owner: userUid };
+            await apiCall('UPDATE', 'tasks', updatedData, id);
+            tasks = await apiCall('GET_ALL', 'tasks'); render();
+        }
+
+        async function deleteTask(id) {
+            if(!confirm('삭제하시겠습니까?')) return;
+            await apiCall('DELETE', 'tasks', null, id);
+            tasks = await apiCall('GET_ALL', 'tasks'); render();
+        }
+
+        function render() {
+            plans.sort((a, b) => (a.period || "").localeCompare(b.period || ""));
+            tasks.sort((a, b) => ((a.actualHours || 0) * 60 + (a.actualMinutes || 0)) - ((b.actualHours || 0) * 60 + (b.actualMinutes || 0)));
+
+            const planListEl = document.getElementById('planList'); planListEl.innerHTML = ''; let totalExpectedMins = 0; 
+            plans.forEach(p => {
+                const div = document.createElement('div'); div.className = 'list-item';
+                div.appendChild(createElementWithText('strong', p.title || '제목 없음'));
+                const expH = p.expectedHours || 0; const expM = p.expectedMinutes || 0;
+                div.appendChild(createElementWithText('p', `기간: ${p.period || '-'} / 예상: ${expH}시간 ${expM}분`));
+                totalExpectedMins += (expH * 60) + expM;
+                if (p.history && p.history !== "[]") {
+                    const historyNotice = document.createElement('p'); historyNotice.className = 'history-text'; historyNotice.textContent = `📝 과거 수정 이력 ${JSON.parse(p.history).length}건`; div.appendChild(historyNotice);
+                }
+                const btnGroup = document.createElement('div'); btnGroup.style.marginTop = '10px';
+                const editBtn = document.createElement('button'); editBtn.className = 'btn-sm btn-warning'; editBtn.textContent = '수정'; editBtn.onclick = () => editPlan(p.id);
+                const delBtn = document.createElement('button'); delBtn.className = 'btn-sm btn-danger'; delBtn.textContent = '삭제'; delBtn.onclick = () => deletePlan(p.id);
+                btnGroup.appendChild(editBtn); btnGroup.appendChild(delBtn); div.appendChild(btnGroup); planListEl.appendChild(div);
+            });
+
+            const taskPlanSelect = document.getElementById('taskPlanSelect'); taskPlanSelect.innerHTML = '<option value="">(연결할 계획을 선택하세요)</option>';
+            plans.forEach(p => { const option = document.createElement('option'); option.value = p.id; option.textContent = p.title; taskPlanSelect.appendChild(option); });
+
+            const taskListEl = document.getElementById('taskList'); taskListEl.innerHTML = ''; let totalActualMins = 0; let blockedCount = 0;
+            tasks.forEach(t => {
+                const div = document.createElement('div'); div.className = 'list-item';
+                const parentPlan = plans.find(p => p.id === t.planId);
+                if (parentPlan) {
+                    const badge = document.createElement('span'); badge.className = 'badge'; badge.textContent = `[${parentPlan.title}]`; div.appendChild(badge); div.appendChild(document.createElement('br'));
+                }
+                div.appendChild(createElementWithText('strong', `✅ ${t.taskName}`));
+                const actH = t.actualHours || 0; const actM = t.actualMinutes || 0;
+                let detail = `소요 시간: ${actH}시간 ${actM}분`;
+                totalActualMins += (actH * 60) + actM;
+                if (t.blockedReason) { detail += ` | 막힌 이유: ${t.blockedReason}`; blockedCount++; }
+                div.appendChild(createElementWithText('p', detail));
+                const btnGroup = document.createElement('div'); btnGroup.style.marginTop = '10px';
+                const editBtn = document.createElement('button'); editBtn.className = 'btn-sm btn-warning'; editBtn.textContent = '수정'; editBtn.onclick = () => editTask(t.id);
+                const delBtn = document.createElement('button'); delBtn.className = 'btn-sm btn-danger'; delBtn.textContent = '삭제'; delBtn.onclick = () => deleteTask(t.id);
+                btnGroup.appendChild(editBtn); btnGroup.appendChild(delBtn); div.appendChild(btnGroup); taskListEl.appendChild(div);
+            });
+
+            document.getElementById('statPlans').textContent = plans.length; document.getElementById('statCompleted').textContent = tasks.length; document.getElementById('statBlocked').textContent = blockedCount;
+            document.getElementById('statHours').innerHTML = `예상 ${Math.floor(totalExpectedMins / 60)}h ${totalExpectedMins % 60}m<br>실제 ${Math.floor(totalActualMins / 60)}h ${totalActualMins % 60}m`;
+        }
+        checkAuth();
+    </script>
+</body>
+</html>
